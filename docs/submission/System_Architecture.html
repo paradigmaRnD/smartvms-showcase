@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart VMS — System Architecture Submission</title>
+<style>
+  :root {
+    --navy: #003366;
+    --blue: #1e5a8a;
+    --light: #e8f0fe;
+    --border: #94a3b8;
+    --text: #1e293b;
+    --muted: #475569;
+    --ok: #059669;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    line-height: 1.45;
+    background: #f8fafc;
+  }
+  .page {
+    max-width: 210mm;
+    margin: 0 auto;
+    background: #fff;
+    padding: 14mm 16mm;
+  }
+  @media print {
+    body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .page { padding: 10mm 12mm; max-width: none; }
+    .no-print { display: none !important; }
+    .arch-diagram { break-inside: avoid; page-break-inside: avoid; }
+    .flow-strip { break-inside: avoid; }
+    h2 { break-after: avoid; page-break-after: avoid; }
+    table { break-inside: auto; }
+    tr { break-inside: avoid; }
+  }
+  header.doc-header {
+    text-align: center;
+    border-bottom: 3px solid var(--navy);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+  }
+  header.doc-header h1 {
+    margin: 0 0 6px;
+    font-size: 1.45rem;
+    color: var(--navy);
+  }
+  header.doc-header .sub { color: var(--muted); font-size: 0.95rem; margin: 4px 0; }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 4px 12px;
+    font-size: 0.85rem;
+    text-align: left;
+    max-width: 520px;
+    margin: 12px auto 0;
+  }
+  .meta-grid dt { font-weight: 600; color: var(--navy); }
+  .meta-grid dd { margin: 0; }
+  h2 {
+    font-size: 1.05rem;
+    color: var(--navy);
+    border-left: 4px solid var(--blue);
+    padding-left: 10px;
+    margin: 22px 0 10px;
+  }
+  p { margin: 0 0 10px; font-size: 0.92rem; }
+  .confidential {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-style: italic;
+    margin-top: 8px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin: 10px 0 16px;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    vertical-align: top;
+    text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+  th { background: var(--navy); color: #fff; font-weight: 600; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  table.moict th[scope="row"] {
+    background: var(--light);
+    color: var(--navy);
+    width: 28%;
+    font-weight: 600;
+  }
+
+  /* ---- Architecture diagram (CSS) ---- */
+  .arch-diagram {
+    margin: 16px 0 20px;
+    padding: 16px;
+    background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .diagram-title {
+    text-align: center;
+    font-weight: 600;
+    color: var(--navy);
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+  }
+  .layer {
+    margin: 0 auto 4px;
+    text-align: center;
+  }
+  .layer-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .box-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  .box {
+    border: 2px solid var(--blue);
+    border-radius: 6px;
+    padding: 10px 14px;
+    min-width: 140px;
+    max-width: 220px;
+    background: #fff;
+    font-size: 0.82rem;
+  }
+  .box strong { display: block; color: var(--navy); margin-bottom: 4px; font-size: 0.88rem; }
+  .box.wide { max-width: 100%; flex: 1 1 100%; }
+  .box.narrow { min-width: 110px; max-width: 160px; }
+  .connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 6px 0;
+    color: var(--blue);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .connector .arrow {
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+  .connector .proto {
+    background: #dbeafe;
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-top: 2px;
+  }
+  .layer.app .box.wide {
+    background: linear-gradient(135deg, #003366 0%, #1e5a8a 100%);
+    color: #fff;
+    border-color: var(--navy);
+  }
+  .layer.app .box.wide strong { color: #fff; }
+  .layer.data .box {
+    border-color: #059669;
+    background: #ecfdf5;
+  }
+  .layer.ext .box {
+    border-color: #b45309;
+    background: #fffbeb;
+    border-style: dashed;
+  }
+
+  /* Data-flow strip */
+  .flow-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    justify-content: center;
+    gap: 4px;
+    margin: 12px 0 8px;
+    font-size: 0.72rem;
+  }
+  .flow-step {
+    flex: 1 1 70px;
+    min-width: 64px;
+    max-width: 95px;
+    background: var(--light);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 4px;
+    text-align: center;
+    position: relative;
+  }
+  .flow-step strong { display: block; color: var(--navy); font-size: 0.68rem; }
+  .flow-arrow {
+    align-self: center;
+    color: var(--blue);
+    font-weight: bold;
+    font-size: 1rem;
+  }
+  ul.compact { margin: 6px 0 12px; padding-left: 1.2rem; font-size: 0.88rem; }
+  ul.compact li { margin: 4px 0; }
+  .print-hint.no-print {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    margin-bottom: 16px;
+  }
+  footer {
+    margin-top: 24px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <p class="print-hint no-print">
+    <strong>Submit as PDF:</strong> Open this file in Chrome or Edge → <kbd>Ctrl+P</kbd> / <kbd>Cmd+P</kbd> →
+    Destination: <strong>Save as PDF</strong> → Margins: Default → Background graphics: <strong>On</strong>.
+  </p>
+
+  <header class="doc-header">
+    <h1>Smart VMS — System Architecture Submission</h1>
+    <p class="sub">Smart VMS (Smart Visitor Management System)</p>
+    <p class="sub">Aligned with MoICT&amp;NG Prototype Showcase architecture guidance</p>
+    <dl class="meta-grid">
+      <dt>Prepared by</dt><dd>Paradigma International Limited</dd>
+      <dt>Address</dt><dd>14 York Terrance Kololo, Kampala, Uganda</dd>
+      <dt>Date</dt><dd>May 2026</dd>
+      <dt>Registration</dt><dd>80020002742668</dd>
+    </dl>
+    <p class="confidential">Confidential — MoICT&NG evaluation. Does not transfer intellectual property.</p>
+  </header>
+
+  <section>
+    <h2>1. Purpose &amp; Overview</h2>
+    <p>This submission addresses the Ministry of ICT and National Guidance architecture elements: components, communication, data storage and security, user access, integrations, hosting, security controls, and data flows.</p>
+    <p>Smart VMS follows a layered architecture: client applications (mobile and web) communicate with application services over encrypted channels. Business rules enforce visitor policies, notifications, and reporting. Data is persisted in segregated stores for operational records and administration. The design supports scaling across multiple application instances and is structured for interoperability with external services through documented APIs.</p>
+  </section>
+
+  <section>
+    <h2>2. Logical Architecture Diagram</h2>
+    <div class="arch-diagram">
+      <div class="diagram-title">Figure 1 — Smart VMS component layers &amp; trust boundaries</div>
+
+      <div class="layer">
+        <div class="layer-label">Users</div>
+        <div class="box-row">
+          <div class="box narrow"><strong>Reception / Security</strong>Staff check-in &amp; validation</div>
+          <div class="box narrow"><strong>Administrators</strong>Configuration &amp; reports</div>
+          <div class="box narrow"><strong>Hosts</strong>Visit notifications</div>
+        </div>
+      </div>
+
+      <div class="connector"><span class="arrow">↓</span><span class="proto">HTTPS / TLS 1.2+</span></div>
+
+      <div class="layer">
+        <div class="layer-label">Client layer</div>
+        <div class="box-row">
+          <div class="box"><strong>Mobile Client</strong>Android app for front-desk operations; offline queue with secure sync</div>
+          <div class="box"><strong>Web Portal</strong>Browser-based administration for organisation staff</div>
+        </div>
+      </div>
+
+      <div class="connector"><span class="arrow">↓</span><span class="proto">Authenticated API requests</span></div>
+
+      <div class="layer app">
+        <div class="layer-label">Application layer</div>
+        <div class="box-row">
+          <div class="box wide"><strong>Application Services (Node.js)</strong>
+            Visitor workflows · Premises policies · Notifications · Subscriptions · Audit hooks · Reporting</div>
+        </div>
+      </div>
+
+      <div class="connector"><span class="arrow">↓</span><span class="proto">Authorised read / write</span></div>
+
+      <div class="layer data">
+        <div class="layer-label">Data &amp; identity layer</div>
+        <div class="box-row">
+          <div class="box narrow"><strong>Identity &amp; Sessions</strong>Login, roles, tokens</div>
+          <div class="box narrow"><strong>Primary Store</strong>Visitors &amp; visits</div>
+          <div class="box narrow"><strong>Admin Store</strong>Relational records</div>
+          <div class="box narrow"><strong>Media Store</strong>Secured attachments</div>
+        </div>
+      </div>
+
+      <div class="connector"><span class="arrow">↓</span><span class="proto">Outbound integrations</span></div>
+
+      <div class="layer ext">
+        <div class="layer-label">External services</div>
+        <div class="box-row">
+          <div class="box narrow"><strong>Email (SMTP)</strong>Alerts &amp; verification</div>
+          <div class="box narrow"><strong>Calendar (optional)</strong>Scheduling</div>
+          <div class="box narrow"><strong>Gov APIs (planned)</strong>National ID &amp; shared platforms</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Check-in Data Flow</h2>
+    <p style="font-size:0.85rem;color:var(--muted);">Primary path from reception desk to persisted visit record.</p>
+    <div class="flow-strip">
+      <div class="flow-step"><strong>1</strong>Mobile / Web client</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><strong>2</strong>TLS encrypted channel</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><strong>3</strong>Auth &amp; RBAC check</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><strong>4</strong>Policy validation</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><strong>5</strong>Visit record saved</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><strong>6</strong>Host notified</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><strong>7</strong>Audit log entry</div>
+    </div>
+    <ul class="compact"><li>Check-in: Staff client → HTTPS → Application services → Role validation → Visit record created → Host notification → Audit entry</li><li>Check-out: Staff client → HTTPS → Visit record updated → Audit entry</li><li>Administration: Web portal → HTTPS → Authenticated API → Configuration or report → Audit entry</li><li>Premises validation: Client presents access token → Server validates policy and timing → Visit associated with premises</li><li>Offline sync: Mobile queues events locally → On connectivity, encrypted synchronisation with conflict handling</li></ul>
+  </section>
+
+  <section>
+    <h2>4. System Components</h2>
+    <table>
+      <thead><tr><th>Component</th><th>Role</th><th>Technology</th></tr></thead>
+      <tbody><tr><td>Mobile Client</td><td>Reception and security staff: visitor registration, check-in/out, premises validation, limited offline operation</td><td>Cross-platform mobile framework</td></tr><tr><td>Web Administration Portal</td><td>Organisation administrators: user management, visitor records, configuration, reports</td><td>Modern web application (browser-based)</td></tr><tr><td>Application Services</td><td>Core business logic: visits, premises, policies, subscriptions, incidents, notifications</td><td>Node.js modular services</td></tr><tr><td>Identity &amp; Session Service</td><td>Authentication, session management, role enforcement</td><td>Industry-standard token-based access</td></tr><tr><td>Primary Data Store</td><td>Operational visitor and visit records, organisation configuration</td><td>Document-oriented database</td></tr><tr><td>Administrative Data Store</td><td>Supplementary relational records for web administration module</td><td>Relational database</td></tr><tr><td>Media &amp; Document Storage</td><td>Visitor-related attachments (e.g. capture images) with access controls</td><td>Secured object storage behind application APIs</td></tr></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>5. MoICT&amp;NG Architecture Checklist</h2>
+    <table class="moict">
+      <tbody><tr><th scope="row">Frontend / User Interface</th><td>Mobile app for reception and security (check-in, check-out, premises validation). Web portal for administrators (records, users, configuration, reports). Primary workflows: register visitor → validate access → notify host → check-out → audit/report.</td></tr><tr><th scope="row">Backend / Application Layer</th><td>Node.js application services host business logic. Requests authenticated and authorised per role. Stateless service instances suitable for load balancing. Request validation and audit hooks on sensitive operations.</td></tr><tr><th scope="row">Database Layer</th><td>Categories stored: organisation profile, users and roles, premises, visitor profiles, visit events (check-in/out timestamps), audit logs, configuration. Primary operational store plus relational store for admin module. Hosting: cloud VPS (production); on-premise deployment path available. Encryption at rest on infrastructure; access restricted to application layer.</td></tr><tr><th scope="row">Authentication and Access</th><td>Credential-based login with secure password handling. Session tokens validated on each request. Roles include Administrator, Manager, Receptionist, Security, and Host with least-privilege permissions. Organisation-level data isolation. MFA: planned; not required for initial deployment.</td></tr><tr><th scope="row">APIs and Integrations</th><td>Exposes REST APIs for visitor lifecycle and administration (consumption by mobile and web clients). Consumes: email (SMTP) for notifications; optional calendar connectivity. Planned: National Identification and other Government platforms via standard integration interfaces. No live NIRA/URA/NITA-U connection in current production.</td></tr><tr><th scope="row">Hosting and Infrastructure</th><td>Production: cloud virtual private server with HTTPS termination (TLS 1.2+). Reverse proxy in front of application services. Hybrid/on-premise deployment supported for institutions requiring local hosting. Geographic hosting: contractor-operated cloud; migration to NITA-U-aligned hosting under roadmap.</td></tr><tr><th scope="row">Security Controls</th><td>TLS for all client–server traffic. Encryption at rest on database and file storage. RBAC enforced in application layer. Comprehensive audit logging (user, action, timestamp, source). Input validation and upload controls on media. Aligned with Uganda Data Protection and Privacy Act, 2019.</td></tr><tr><th scope="row">Data Flow</th><td>Data enters at mobile/web clients → TLS → application services → authorisation check → persistence → optional notification to host. Data exits via authorised reports/exports and audit review. No public anonymous access to visitor records.</td></tr></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>6. User Access Methods</h2>
+    <ul class="compact"><li>Android mobile application (reception and security)</li><li>Web browser (organisation administrators)</li><li>REST APIs (authenticated integrations — documentation in showcase repository)</li></ul>
+  </section>
+
+  <section>
+    <h2>7. Integrations</h2>
+    <p><strong>Current</strong></p>
+    <ul class="compact"><li>Email (SMTP) for account verification and visit notifications</li><li>Optional calendar integration for scheduling-related features</li></ul>
+    <p><strong>Planned</strong></p>
+    <ul class="compact"><li>National Identification / digital identity services</li><li>Government integration layer and sector platforms as standards are adopted</li><li>NITA-U aligned hosting where required by procurement policy</li></ul>
+  </section>
+
+  <section>
+    <h2>8. Security Controls</h2>
+    <ul class="compact"><li>Encrypted transport (TLS) on all client connections</li><li>Session-based authentication with per-request validation</li><li>Role-based access control with organisation isolation</li><li>Audit trail for administrative and visitor-data actions</li><li>Secure handling of uploaded media; metadata minimisation</li><li>Rate limiting and validation on public-facing API endpoints</li></ul>
+  </section>
+
+  <section>
+    <h2>9. Scalability &amp; Resilience</h2>
+    <p>Application tier designed stateless for horizontal scaling behind a load balancer. Database tier supports replication. Suitable for institutional deployments from single premises to multi-site organisations.</p>
+  </section>
+
+  <section>
+    <h2>10. Confidentiality</h2>
+    <p>Submitted for MoICT&amp;NG evaluation and National Innovator Registry profiling only. Confidential per application terms. Does not transfer intellectual property. Proprietary implementation details, credentials, and algorithms are not included in this public summary or the showcase repository.</p>
+  </section>
+
+  <footer>
+  https://github.com/paradigmaRnD/smartvms-showcase · ivanmusaja@protonmail.com · 256776974521
+  </footer>
+</div>
+</body>
+</html>
