@@ -15,7 +15,7 @@ Smart VMS digitises visitor logbooks for institutional reception and security: r
 | **Application services** | Node.js business logic, policies, notifications |
 | **Identity** | Authenticated sessions, role-based access |
 | **Data** | Operational store, administrative store, secured media |
-| **External** | Email notifications; Government APIs planned |
+| **External** | Email notifications; optional calendar |
 
 ## 3. User access
 
@@ -35,9 +35,9 @@ Smart VMS digitises visitor logbooks for institutional reception and security: r
 
 Stateless application tier; horizontal scaling; multi-premises per organisation.
 
-## 6. Government integration (roadmap)
+## 6. Integrations
 
-Planned interfaces for National Identification and shared Government platforms. Current production uses institutional workflows and standard REST integration points.
+Current production: SMTP email for notifications; optional calendar connectivity. REST APIs serve mobile and web clients.
 
 ---
 

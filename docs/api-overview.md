@@ -20,14 +20,6 @@ This document describes **scope only**. Endpoint specifications, authentication 
 | **Reports** | Aggregated visitor activity (authorised roles) |
 | **Audit** | Activity log retrieval (administrative roles) |
 
-## Integration pattern for Government systems
-
-Future consumers (e.g. identity verification, shared services bus) would connect via:
-
-1. Mutual TLS or approved API credentials (environment-specific)  
-2. Versioned REST resources for visitor verification events  
-3. Event notifications (webhook or message queue) where required  
-
 ## Not included here
 
 - OpenAPI/Swagger files with production URLs  
